@@ -31,4 +31,7 @@ class Warehouse(Base):
         nullable=False,
     )
 
-    details: Mapped[list["Detail"]] = relationship(back_populates="warehouse")
+    details: Mapped[list["Detail"]] = relationship(
+        "Detail",
+        back_populates="warehouse",
+    )

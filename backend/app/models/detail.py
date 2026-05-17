@@ -61,6 +61,12 @@ class Detail(Base):
         nullable=False,
     )
 
-    category: Mapped["Category"] = relationship(back_populates="details")
-    supplier: Mapped["Supplier | None"] = relationship(back_populates="details")
-    warehouse: Mapped["Warehouse | None"] = relationship(back_populates="details")
+    category: Mapped["Category"] = relationship("Category", back_populates="details")
+    supplier: Mapped["Supplier | None"] = relationship(
+        "Supplier",
+        back_populates="details",
+    )
+    warehouse: Mapped["Warehouse | None"] = relationship(
+        "Warehouse",
+        back_populates="details",
+    )

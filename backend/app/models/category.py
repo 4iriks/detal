@@ -31,6 +31,7 @@ class Category(Base):
     )
 
     details: Mapped[list["Detail"]] = relationship(
+        "Detail",
         back_populates="category",
         cascade="all, delete-orphan",
     )

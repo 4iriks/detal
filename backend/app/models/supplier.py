@@ -32,4 +32,4 @@ class Supplier(Base):
         nullable=False,
     )
 
-    details: Mapped[list["Detail"]] = relationship(back_populates="supplier")
+    details: Mapped[list["Detail"]] = relationship("Detail", back_populates="supplier")
