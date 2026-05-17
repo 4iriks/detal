@@ -161,3 +161,44 @@ DELETE /categories/{category_id}
   "description": "Валы, шестерни, корпуса и другие механические элементы"
 }
 ```
+
+## API поставщиков
+
+Для сущности `Supplier` реализован CRUD:
+
+```text
+GET    /suppliers?skip=0&limit=100
+GET    /suppliers/{supplier_id}
+POST   /suppliers
+PUT    /suppliers/{supplier_id}
+PATCH  /suppliers/{supplier_id}
+DELETE /suppliers/{supplier_id}
+```
+
+Пример JSON для `POST /suppliers`:
+
+```json
+{
+  "name": "ООО МеталлПром",
+  "email": "sales@metallprom.ru",
+  "phone": "+7 495 100-20-30",
+  "address": "г. Москва, Промышленная ул., 12"
+}
+```
+
+Пример JSON для `PUT /suppliers/{supplier_id}`:
+
+```json
+{
+  "name": "АО ТехКомплект",
+  "email": "info@techkomplekt.ru",
+  "phone": "+7 812 200-30-40",
+  "address": "г. Санкт-Петербург, Складская ул., 5"
+}
+```
+
+Проверить все endpoint-ы можно через Swagger UI:
+
+```text
+http://127.0.0.1:8000/docs
+```
