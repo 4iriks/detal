@@ -76,6 +76,14 @@ a {
   gap: 8px;
 }
 
+.header-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
 .navigation-link {
   display: inline-flex;
   align-items: center;
@@ -91,6 +99,30 @@ a {
 .navigation-link.active {
   background: #e7f3f0;
   color: #0d5f54;
+}
+
+.role-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #435466;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.role-selector select {
+  min-height: 38px;
+  border: 1px solid #c8d3df;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #16212d;
+  padding: 0 10px;
+  font: inherit;
+}
+
+.role-selector select:focus {
+  outline: 3px solid #bde2dc;
+  border-color: #0d5f54;
 }
 
 .app-main {
@@ -425,6 +457,10 @@ h1 {
   }
 
   .navigation {
+    justify-content: flex-start;
+  }
+
+  .header-tools {
     justify-content: flex-start;
   }
 

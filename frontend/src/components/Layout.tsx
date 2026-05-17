@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 
 import Navigation from "./Navigation";
+import RoleSelector from "./RoleSelector";
 
 export default function Layout() {
   return (
@@ -13,7 +14,10 @@ export default function Layout() {
             <div className="brand-caption">Склад предприятия</div>
           </div>
         </div>
-        <Navigation />
+        <div className="header-tools">
+          <Navigation />
+          <RoleSelector />
+        </div>
       </header>
       <main className="app-main">
         <Outlet />
