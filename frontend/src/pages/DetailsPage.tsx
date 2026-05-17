@@ -7,12 +7,14 @@ import {
   createDetail,
   deleteDetail,
   getDetails,
+  getLowStockDetails,
   updateDetail,
+  updateDetailQuantity,
 } from "../api/details";
 import { getSuppliers } from "../api/suppliers";
 import { getWarehouses } from "../api/warehouses";
 import type { Category } from "../types/category";
-import type { Detail, DetailCreate } from "../types/detail";
+import type { Detail, DetailCreate, DetailFilters } from "../types/detail";
 import type { Supplier } from "../types/supplier";
 import type { Warehouse } from "../types/warehouse";
 
@@ -28,6 +30,14 @@ interface DetailFormState {
   warehouse_id: string;
 }
 
+interface DetailFilterState {
+  search: string;
+  category_id: string;
+  supplier_id: string;
+  warehouse_id: string;
+  threshold: string;
+}
+
 const emptyForm: DetailFormState = {
   name: "",
   article: "",
@@ -40,16 +50,28 @@ const emptyForm: DetailFormState = {
   warehouse_id: "",
 };
 
+const emptyFilters: DetailFilterState = {
+  search: "",
+  category_id: "",
+  supplier_id: "",
+  warehouse_id: "",
+  threshold: "5",
+};
+
 export default function DetailsPage() {
   const [details, setDetails] = useState<Detail[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [form, setForm] = useState<DetailFormState>(emptyForm);
+  const [filters, setFilters] = useState<DetailFilterState>(emptyFilters);
   const [editingDetail, setEditingDetail] = useState<Detail | null>(null);
+  const [quantityDrafts, setQuantityDrafts] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [quantitySavingId, setQuantitySavingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [isLowStockMode, setIsLowStockMode] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -62,13 +84,14 @@ export default function DetailsPage() {
     setWarehouses(loadedWarehouses);
   }, []);
 
-  const loadDetails = useCallback(async () => {
+  const loadDetails = useCallback(async (params?: DetailFilters) => {
     setIsLoading(true);
     setPageError(null);
 
     try {
-      const loadedDetails = await getDetails();
+      const loadedDetails = await getDetails(params);
       setDetails(loadedDetails);
+      setQuantityDrafts(createQuantityDrafts(loadedDetails));
     } catch {
       setPageError(
         "Не удалось загрузить детали. Проверьте, что backend запущен.",
@@ -95,6 +118,42 @@ export default function DetailsPage() {
 
     void loadPageData();
   }, [loadDetails, loadReferences]);
+
+  const loadLowStock = async () => {
+    const threshold = Number(filters.threshold);
+
+    if (!Number.isInteger(threshold) || threshold < 0) {
+      setPageError(
+        "Порог малого остатка должен быть целым числом больше или равным 0.",
+      );
+      return;
+    }
+
+    setIsLoading(true);
+    setPageError(null);
+
+    try {
+      const loadedDetails = await getLowStockDetails(threshold);
+      setDetails(loadedDetails);
+      setQuantityDrafts(createQuantityDrafts(loadedDetails));
+      setIsLowStockMode(true);
+    } catch {
+      setPageError(
+        "Не удалось загрузить детали. Проверьте, что backend запущен.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const reloadVisibleDetails = async () => {
+    if (isLowStockMode) {
+      await loadLowStock();
+      return;
+    }
+
+    await loadDetails(buildFilterParams(filters));
+  };
 
   const resetForm = () => {
     setForm(emptyForm);
@@ -197,7 +256,8 @@ export default function DetailsPage() {
       }
 
       resetForm();
-      await loadDetails();
+      setIsLowStockMode(false);
+      await loadDetails(buildFilterParams(filters));
     } catch (error) {
       setFormError(getMutationErrorMessage(error));
     } finally {
@@ -237,11 +297,51 @@ export default function DetailsPage() {
       if (editingDetail?.id === detail.id) {
         resetForm();
       }
-      await loadDetails();
+      await reloadVisibleDetails();
     } catch (error) {
       setPageError(getMutationErrorMessage(error));
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleApplyFilters = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsLowStockMode(false);
+    await loadDetails(buildFilterParams(filters));
+  };
+
+  const handleResetFilters = async () => {
+    setFilters(emptyFilters);
+    setIsLowStockMode(false);
+    await loadDetails();
+  };
+
+  const handleQuantityDraftChange = (detailId: number, value: string) => {
+    setQuantityDrafts((current) => ({
+      ...current,
+      [detailId]: value,
+    }));
+  };
+
+  const handleQuantityUpdate = async (detail: Detail) => {
+    const quantity = Number(quantityDrafts[detail.id] ?? detail.quantity);
+
+    if (!Number.isInteger(quantity) || quantity < 0) {
+      setPageError("Количество должно быть целым числом больше или равным 0.");
+      return;
+    }
+
+    setQuantitySavingId(detail.id);
+    setPageError(null);
+
+    try {
+      await updateDetailQuantity(detail.id, quantity);
+      await reloadVisibleDetails();
+    } catch (error) {
+      setPageError(getMutationErrorMessage(error));
+    } finally {
+      setQuantitySavingId(null);
     }
   };
 
@@ -253,6 +353,130 @@ export default function DetailsPage() {
         <p className="lead">
           Управление деталями, артикулами, ценами и складскими остатками.
         </p>
+      </div>
+
+      <div className="entity-panel filters-panel">
+        <div className="panel-heading">
+          <div>
+            <h2>Фильтры</h2>
+            <p>Поиск по названию, артикулу, материалу и справочникам.</p>
+          </div>
+          {isLowStockMode && <span className="status-label">Малый остаток</span>}
+        </div>
+
+        <form className="filters-form" onSubmit={handleApplyFilters}>
+          <div className="filters-grid">
+            <label className="field">
+              <span>Поиск</span>
+              <input
+                value={filters.search}
+                placeholder="bolt, артикул, материал"
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    search: event.target.value,
+                  }))
+                }
+              />
+            </label>
+
+            <label className="field">
+              <span>Категория</span>
+              <select
+                value={filters.category_id}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    category_id: event.target.value,
+                  }))
+                }
+              >
+                <option value="">Все категории</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Поставщик</span>
+              <select
+                value={filters.supplier_id}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    supplier_id: event.target.value,
+                  }))
+                }
+              >
+                <option value="">Все поставщики</option>
+                {suppliers.map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Склад</span>
+              <select
+                value={filters.warehouse_id}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    warehouse_id: event.target.value,
+                  }))
+                }
+              >
+                <option value="">Все склады</option>
+                {warehouses.map((warehouse) => (
+                  <option key={warehouse.id} value={warehouse.id}>
+                    {warehouse.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Порог остатка</span>
+              <input
+                value={filters.threshold}
+                min="0"
+                step="1"
+                type="number"
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    threshold: event.target.value,
+                  }))
+                }
+              />
+            </label>
+          </div>
+
+          <div className="form-actions">
+            <button className="button button-primary" type="submit">
+              Применить
+            </button>
+            <button
+              className="button button-secondary"
+              type="button"
+              onClick={() => void handleResetFilters()}
+            >
+              Сбросить
+            </button>
+            <button
+              className="button button-secondary"
+              type="button"
+              onClick={() => void loadLowStock()}
+            >
+              Малый остаток
+            </button>
+          </div>
+        </form>
       </div>
 
       <div className="entity-grid">
@@ -440,7 +664,7 @@ export default function DetailsPage() {
             <button
               className="button button-secondary"
               type="button"
-              onClick={() => void loadDetails()}
+              onClick={() => void reloadVisibleDetails()}
               disabled={isLoading}
             >
               Обновить
@@ -479,7 +703,42 @@ export default function DetailsPage() {
                       <td>{detail.article}</td>
                       <td>{detail.material || "—"}</td>
                       <td>{formatNumber(detail.price)}</td>
-                      <td>{detail.quantity}</td>
+                      <td>
+                        <div className="quantity-stack">
+                          <span className="quantity-current">
+                            {detail.quantity}
+                          </span>
+                          <div className="quantity-control">
+                            <input
+                              className="quantity-input"
+                              value={
+                                quantityDrafts[detail.id] ??
+                                String(detail.quantity)
+                              }
+                              min="0"
+                              step="1"
+                              type="number"
+                              aria-label={`Количество детали ${detail.name}`}
+                              onChange={(event) =>
+                                handleQuantityDraftChange(
+                                  detail.id,
+                                  event.target.value,
+                                )
+                              }
+                            />
+                            <button
+                              className="button button-secondary"
+                              type="button"
+                              disabled={quantitySavingId === detail.id}
+                              onClick={() => void handleQuantityUpdate(detail)}
+                            >
+                              {quantitySavingId === detail.id
+                                ? "Сохранение..."
+                                : "Изменить количество"}
+                            </button>
+                          </div>
+                        </div>
+                      </td>
                       <td>{getCategoryName(detail, categories)}</td>
                       <td>{getSupplierName(detail, suppliers)}</td>
                       <td>{getWarehouseName(detail, warehouses)}</td>
@@ -513,6 +772,35 @@ export default function DetailsPage() {
       </div>
     </section>
   );
+}
+
+function createQuantityDrafts(details: Detail[]): Record<number, string> {
+  return Object.fromEntries(
+    details.map((detail) => [detail.id, String(detail.quantity)]),
+  );
+}
+
+function buildFilterParams(filters: DetailFilterState): DetailFilters {
+  const params: DetailFilters = {};
+  const search = filters.search.trim();
+
+  if (search) {
+    params.search = search;
+  }
+
+  if (filters.category_id) {
+    params.category_id = Number(filters.category_id);
+  }
+
+  if (filters.supplier_id) {
+    params.supplier_id = Number(filters.supplier_id);
+  }
+
+  if (filters.warehouse_id) {
+    params.warehouse_id = Number(filters.warehouse_id);
+  }
+
+  return params;
 }
 
 function formatDate(value: string): string {

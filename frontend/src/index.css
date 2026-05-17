@@ -254,6 +254,34 @@ h1 {
   justify-content: space-between;
 }
 
+.filters-panel {
+  gap: 16px;
+}
+
+.filters-form {
+  display: grid;
+  gap: 16px;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.status-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  border-radius: 8px;
+  background: #e7f3f0;
+  color: #0d5f54;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .button {
   display: inline-flex;
   align-items: center;
@@ -358,6 +386,38 @@ h1 {
   color: #253443;
 }
 
+.quantity-stack {
+  display: grid;
+  gap: 8px;
+  min-width: 210px;
+}
+
+.quantity-current {
+  font-weight: 800;
+}
+
+.quantity-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quantity-input {
+  width: 86px;
+  min-height: 38px;
+  border: 1px solid #c8d3df;
+  border-radius: 8px;
+  padding: 0 10px;
+  color: #16212d;
+  font: inherit;
+  font-weight: 600;
+}
+
+.quantity-input:focus {
+  outline: 3px solid #bde2dc;
+  border-color: #0d5f54;
+}
+
 @media (max-width: 840px) {
   .app-header {
     align-items: flex-start;
@@ -376,6 +436,10 @@ h1 {
     grid-template-columns: 1fr;
   }
 
+  .filters-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .panel-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -389,5 +453,9 @@ h1 {
 
   .navigation-link {
     padding: 0 12px;
+  }
+
+  .filters-grid {
+    grid-template-columns: 1fr;
   }
 }
