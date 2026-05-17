@@ -35,6 +35,7 @@ backend/
     versions/
       20260517_0001_core_tables.py
       20260517_0002_detail_article_length.py
+      20260517_0003_db_objects.py
   alembic.ini
   requirements.txt
   .env.example
@@ -61,6 +62,38 @@ backend/
 - `suppliers.email`
 - `warehouses.name`
 - `details.article`
+
+## SQL-объекты БД
+
+Миграция `20260517_0003_db_objects.py` добавляет SQL-объекты PostgreSQL для требований курсовой работы.
+
+Таблица журнала:
+
+- `detail_logs` - хранит изменения количества и цены деталей.
+
+Представления:
+
+- `view_details_full` - показывает детали вместе с названием категории, поставщика и склада.
+- `view_low_stock_details` - показывает детали с количеством `quantity <= 5`.
+- `view_supplier_details_summary` - показывает сводку по поставщикам: количество деталей, общий остаток и суммарную стоимость.
+
+Функции:
+
+- `get_total_details_count()` - возвращает общее количество деталей.
+- `calculate_total_stock_value()` - возвращает общую стоимость остатков деталей.
+- `get_details_count_by_category(p_category_id integer)` - возвращает количество деталей в выбранной категории.
+
+Процедуры:
+
+- `increase_detail_quantity(p_detail_id integer, p_amount integer)` - увеличивает количество детали.
+- `decrease_detail_quantity(p_detail_id integer, p_amount integer)` - уменьшает количество детали и не допускает отрицательный остаток.
+- `set_detail_price(p_detail_id integer, p_price numeric)` - изменяет цену детали и не допускает отрицательную цену.
+
+Триггеры:
+
+- `trigger_check_detail_values` - проверяет, что `quantity`, `price` и `weight` не отрицательные.
+- `trigger_update_detail_updated_at` - автоматически обновляет `updated_at` при изменении детали.
+- `trigger_log_detail_changes` - записывает изменение `quantity` или `price` в `detail_logs`.
 
 ## Подготовка окружения
 
