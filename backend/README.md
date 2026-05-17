@@ -202,3 +202,42 @@ DELETE /suppliers/{supplier_id}
 ```text
 http://127.0.0.1:8000/docs
 ```
+
+## API складов
+
+Для сущности `Warehouse` реализован CRUD:
+
+```text
+GET    /warehouses?skip=0&limit=100
+GET    /warehouses/{warehouse_id}
+POST   /warehouses
+PUT    /warehouses/{warehouse_id}
+PATCH  /warehouses/{warehouse_id}
+DELETE /warehouses/{warehouse_id}
+```
+
+Пример JSON для `POST /warehouses`:
+
+```json
+{
+  "name": "Основной склад",
+  "address": "г. Москва, Заводская ул., 10",
+  "responsible_person": "Иванов Иван Иванович"
+}
+```
+
+Пример JSON для `PUT /warehouses/{warehouse_id}`:
+
+```json
+{
+  "name": "Склад готовой продукции",
+  "address": "г. Москва, Производственный проезд, 7",
+  "responsible_person": "Петров Петр Петрович"
+}
+```
+
+Проверить API складов можно через Swagger UI:
+
+```text
+http://127.0.0.1:8000/docs
+```
