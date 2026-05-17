@@ -34,6 +34,7 @@ backend/
   alembic/
     versions/
       20260517_0001_core_tables.py
+      20260517_0002_detail_article_length.py
   alembic.ini
   requirements.txt
   .env.example
@@ -237,6 +238,87 @@ DELETE /warehouses/{warehouse_id}
 ```
 
 Проверить API складов можно через Swagger UI:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+## API деталей
+
+Для основной сущности `Detail` реализован CRUD, фильтрация, поиск и изменение количества:
+
+```text
+GET    /details?skip=0&limit=100
+GET    /details/{detail_id}
+POST   /details
+PUT    /details/{detail_id}
+PATCH  /details/{detail_id}
+DELETE /details/{detail_id}
+GET    /details/low-stock?threshold=5
+PATCH  /details/{detail_id}/quantity
+```
+
+Пример JSON для `POST /details`:
+
+```json
+{
+  "name": "Болт М8",
+  "article": "BOLT-M8-001",
+  "material": "Сталь",
+  "weight": 0.035,
+  "price": 12.5,
+  "quantity": 100,
+  "category_id": 1,
+  "supplier_id": 1,
+  "warehouse_id": 1
+}
+```
+
+Пример JSON для `PUT /details/{detail_id}`:
+
+```json
+{
+  "name": "Болт М8 усиленный",
+  "article": "BOLT-M8-002",
+  "material": "Нержавеющая сталь",
+  "weight": 0.04,
+  "price": 15.75,
+  "quantity": 80,
+  "category_id": 1,
+  "supplier_id": 1,
+  "warehouse_id": 1
+}
+```
+
+Пример JSON для `PATCH /details/{detail_id}`:
+
+```json
+{
+  "price": 14.9,
+  "quantity": 60,
+  "warehouse_id": 2
+}
+```
+
+Примеры фильтрации и поиска:
+
+```text
+GET /details?category_id=1
+GET /details?supplier_id=1
+GET /details?warehouse_id=1
+GET /details?search=bolt
+GET /details/low-stock?threshold=3
+```
+
+Пример JSON для `PATCH /details/{detail_id}/quantity`:
+
+```json
+{
+  "quantity": 10
+}
+```
+
+Все endpoint-ы деталей доступны в Swagger UI:
 
 ```text
 http://127.0.0.1:8000/docs
