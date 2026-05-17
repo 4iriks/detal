@@ -95,6 +95,41 @@ backend/
 - `trigger_update_detail_updated_at` - автоматически обновляет `updated_at` при изменении детали.
 - `trigger_log_detail_changes` - записывает изменение `quantity` или `price` в `detail_logs`.
 
+## Запуск через Docker
+
+Команды выполняются из корня проекта.
+
+Запустить PostgreSQL и FastAPI backend:
+
+```powershell
+docker compose up --build
+```
+
+Применить миграции Alembic:
+
+```powershell
+docker compose exec backend alembic upgrade head
+```
+
+Проверочные адреса:
+
+```text
+http://localhost:8000/health
+http://localhost:8000/docs
+```
+
+Остановить контейнеры:
+
+```powershell
+docker compose down
+```
+
+Остановить контейнеры и полностью очистить данные PostgreSQL:
+
+```powershell
+docker compose down -v
+```
+
 ## Подготовка окружения
 
 Команды выполняются из папки `backend`.
