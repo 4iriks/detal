@@ -5,6 +5,13 @@ from app.schemas.category import (
     CategoryRead,
     CategoryUpdate,
 )
+from app.schemas.supplier import (
+    SupplierBase,
+    SupplierCreate,
+    SupplierPartialUpdate,
+    SupplierRead,
+    SupplierUpdate,
+)
 
 __all__ = [
     "CategoryBase",
@@ -12,4 +19,9 @@ __all__ = [
     "CategoryPartialUpdate",
     "CategoryRead",
     "CategoryUpdate",
+    "SupplierBase",
+    "SupplierCreate",
+    "SupplierPartialUpdate",
+    "SupplierRead",
+    "SupplierUpdate",
 ]
