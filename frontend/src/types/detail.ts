@@ -24,3 +24,32 @@ export interface DetailFull extends Detail {
   supplier: Supplier | null;
   warehouse: Warehouse | null;
 }
+
+export interface DetailCreate {
+  name: string;
+  article: string;
+  material: string | null;
+  weight: NumericValue | null;
+  price: NumericValue;
+  quantity: number;
+  category_id: number;
+  supplier_id: number | null;
+  warehouse_id: number | null;
+}
+
+export type DetailUpdate = DetailCreate;
+
+export type DetailPatch = Partial<DetailCreate>;
+
+export interface DetailQuantityUpdate {
+  quantity: number;
+}
+
+export interface DetailFilters {
+  skip?: number;
+  limit?: number;
+  category_id?: number;
+  supplier_id?: number;
+  warehouse_id?: number;
+  search?: string;
+}
