@@ -12,6 +12,13 @@ from app.schemas.supplier import (
     SupplierRead,
     SupplierUpdate,
 )
+from app.schemas.warehouse import (
+    WarehouseBase,
+    WarehouseCreate,
+    WarehousePartialUpdate,
+    WarehouseRead,
+    WarehouseUpdate,
+)
 
 __all__ = [
     "CategoryBase",
@@ -24,4 +31,9 @@ __all__ = [
     "SupplierPartialUpdate",
     "SupplierRead",
     "SupplierUpdate",
+    "WarehouseBase",
+    "WarehouseCreate",
+    "WarehousePartialUpdate",
+    "WarehouseRead",
+    "WarehouseUpdate",
 ]
