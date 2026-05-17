@@ -74,6 +74,13 @@ class SupplierPartialUpdate(BaseModel):
             return value.strip()
         return value
 
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: EmailStr | None) -> EmailStr | None:
+        if value is None:
+            raise ValueError("Email поставщика не может быть пустым")
+        return value
+
     @field_validator("phone", "address")
     @classmethod
     def normalize_optional_text(cls, value: str | None) -> str | None:
