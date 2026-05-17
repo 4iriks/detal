@@ -328,6 +328,10 @@ h1 {
   min-width: 720px;
 }
 
+.data-table-wide {
+  min-width: 980px;
+}
+
 .data-table th,
 .data-table td {
   border-bottom: 1px solid #e5ebf2;
