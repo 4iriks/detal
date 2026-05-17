@@ -7,6 +7,7 @@ from app.database.session import get_db_session
 from app.schemas.detail import (
     DetailCreate,
     DetailPartialUpdate,
+    DetailQuantityUpdate,
     DetailReadFull,
     DetailUpdate,
 )
@@ -23,8 +24,28 @@ async def get_details(
     session: SessionDep,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 100,
+    category_id: Annotated[int | None, Query(gt=0)] = None,
+    supplier_id: Annotated[int | None, Query(gt=0)] = None,
+    warehouse_id: Annotated[int | None, Query(gt=0)] = None,
+    search: Annotated[str | None, Query(max_length=100)] = None,
 ):
-    return await detail_service.get_details(session, skip=skip, limit=limit)
+    return await detail_service.get_details(
+        session,
+        skip=skip,
+        limit=limit,
+        category_id=category_id,
+        supplier_id=supplier_id,
+        warehouse_id=warehouse_id,
+        search=search,
+    )
+
+
+@router.get("/low-stock", response_model=list[DetailReadFull])
+async def get_low_stock_details(
+    session: SessionDep,
+    threshold: Annotated[int, Query(ge=0)] = 5,
+):
+    return await detail_service.get_low_stock_details(session, threshold=threshold)
 
 
 @router.get("/{detail_id}", response_model=DetailReadFull)
@@ -57,6 +78,15 @@ async def partial_update_detail(
     session: SessionDep,
 ):
     return await detail_service.partial_update_detail(session, detail_id, payload)
+
+
+@router.patch("/{detail_id}/quantity", response_model=DetailReadFull)
+async def update_detail_quantity(
+    detail_id: int,
+    payload: DetailQuantityUpdate,
+    session: SessionDep,
+):
+    return await detail_service.update_detail_quantity(session, detail_id, payload)
 
 
 @router.delete("/{detail_id}", status_code=status.HTTP_204_NO_CONTENT)

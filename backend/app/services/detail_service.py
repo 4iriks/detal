@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -8,7 +8,12 @@ from app.models.category import Category
 from app.models.detail import Detail
 from app.models.supplier import Supplier
 from app.models.warehouse import Warehouse
-from app.schemas.detail import DetailCreate, DetailPartialUpdate, DetailUpdate
+from app.schemas.detail import (
+    DetailCreate,
+    DetailPartialUpdate,
+    DetailQuantityUpdate,
+    DetailUpdate,
+)
 
 
 class DetailService:
@@ -17,14 +22,34 @@ class DetailService:
         session: AsyncSession,
         skip: int = 0,
         limit: int = 100,
+        category_id: int | None = None,
+        supplier_id: int | None = None,
+        warehouse_id: int | None = None,
+        search: str | None = None,
     ) -> list[Detail]:
-        result = await session.execute(
-            select(Detail)
-            .options(*self._detail_options())
-            .order_by(Detail.id)
-            .offset(skip)
-            .limit(limit)
-        )
+        query = select(Detail).options(*self._detail_options())
+
+        if category_id is not None:
+            query = query.where(Detail.category_id == category_id)
+        if supplier_id is not None:
+            query = query.where(Detail.supplier_id == supplier_id)
+        if warehouse_id is not None:
+            query = query.where(Detail.warehouse_id == warehouse_id)
+
+        if search is not None:
+            normalized_search = search.strip()
+            if normalized_search:
+                pattern = f"%{normalized_search}%"
+                query = query.where(
+                    or_(
+                        Detail.name.ilike(pattern),
+                        Detail.article.ilike(pattern),
+                        Detail.material.ilike(pattern),
+                    )
+                )
+
+        query = query.order_by(Detail.id).offset(skip).limit(limit)
+        result = await session.execute(query)
         return list(result.scalars().all())
 
     async def get_detail_by_id(
@@ -136,6 +161,39 @@ class DetailService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Деталь нельзя удалить из-за ограничений базы данных",
             ) from exc
+
+    async def get_low_stock_details(
+        self,
+        session: AsyncSession,
+        threshold: int = 5,
+    ) -> list[Detail]:
+        result = await session.execute(
+            select(Detail)
+            .options(*self._detail_options())
+            .where(Detail.quantity <= threshold)
+            .order_by(Detail.quantity, Detail.id)
+        )
+        return list(result.scalars().all())
+
+    async def update_detail_quantity(
+        self,
+        session: AsyncSession,
+        detail_id: int,
+        payload: DetailQuantityUpdate,
+    ) -> Detail:
+        detail = await self.get_detail_by_id(session, detail_id)
+        detail.quantity = payload.quantity
+
+        try:
+            await session.commit()
+        except IntegrityError as exc:
+            await session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Количество детали не удалось изменить",
+            ) from exc
+
+        return await self.get_detail_by_id(session, detail_id)
 
     async def _validate_references(
         self,
