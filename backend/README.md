@@ -23,15 +23,43 @@ backend/
       session.py
       base.py
     models/
+      category.py
+      detail.py
+      supplier.py
+      warehouse.py
     schemas/
     routers/
       health.py
     services/
   alembic/
+    versions/
+      20260517_0001_core_tables.py
   alembic.ini
   requirements.txt
   .env.example
 ```
+
+## Таблицы БД
+
+В первой миграции создаются 4 основные таблицы:
+
+- `categories` - категории деталей: название, описание, даты создания и обновления.
+- `suppliers` - поставщики: название, email, телефон, адрес, даты создания и обновления.
+- `warehouses` - склады: название, адрес, ответственное лицо, даты создания и обновления.
+- `details` - детали: название, артикул, материал, вес, цена, количество и связи с категорией, поставщиком и складом.
+
+Связи:
+
+- `categories.id` -> `details.category_id`: одна категория содержит много деталей.
+- `suppliers.id` -> `details.supplier_id`: один поставщик связан со многими деталями.
+- `warehouses.id` -> `details.warehouse_id`: один склад связан со многими деталями.
+
+В миграции также добавлены ограничения уникальности и индексы для:
+
+- `categories.name`
+- `suppliers.email`
+- `warehouses.name`
+- `details.article`
 
 ## Подготовка окружения
 
@@ -59,16 +87,22 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/detail_wareho
 
 ## Миграции
 
-Применить миграции:
+Применить текущие миграции:
 
 ```powershell
 alembic upgrade head
 ```
 
-Создать новую миграцию после добавления моделей:
+Создать новую миграцию после изменения моделей:
 
 ```powershell
-alembic revision --autogenerate -m "create initial tables"
+alembic revision --autogenerate -m "описание миграции"
+```
+
+Откатить последнюю миграцию:
+
+```powershell
+alembic downgrade -1
 ```
 
 ## Запуск сервера
