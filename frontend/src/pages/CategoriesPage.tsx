@@ -8,6 +8,7 @@ import {
   getCategories,
   updateCategory,
 } from "../api/categories";
+import { useRole } from "../auth/useRole";
 import type { Category, CategoryCreate } from "../types/category";
 
 interface CategoryFormState {
@@ -21,6 +22,7 @@ const emptyForm: CategoryFormState = {
 };
 
 export default function CategoriesPage() {
+  const { role, canCreate, canEdit, canDelete } = useRole();
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<CategoryFormState>(emptyForm);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -83,6 +85,10 @@ export default function CategoriesPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (!canCreate && !canEdit) {
+      return;
+    }
+
     const validationError = validateForm();
     if (validationError) {
       setFormError(validationError);
@@ -111,6 +117,10 @@ export default function CategoriesPage() {
   };
 
   const handleEdit = (category: Category) => {
+    if (!canEdit) {
+      return;
+    }
+
     setEditingCategory(category);
     setForm({
       name: category.name,
@@ -120,6 +130,10 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = async (category: Category) => {
+    if (!canDelete) {
+      return;
+    }
+
     const confirmed = window.confirm(
       `Удалить категорию «${category.name}»?`,
     );
@@ -153,68 +167,77 @@ export default function CategoriesPage() {
           Управление категориями деталей: добавление, изменение и удаление
           справочных записей.
         </p>
+        <div className="role-info">
+          Текущая роль: <strong>{role}</strong>
+        </div>
       </div>
 
-      <div className="entity-grid">
-        <form className="entity-form" onSubmit={handleSubmit}>
-          <div>
-            <h2>
-              {editingCategory ? "Редактирование категории" : "Новая категория"}
-            </h2>
-          </div>
+      <div className={canCreate ? "entity-grid" : "entity-grid entity-grid-single"}>
+        {canCreate && (
+          <form className="entity-form" onSubmit={handleSubmit}>
+            <div>
+              <h2>
+                {editingCategory ? "Редактирование категории" : "Новая категория"}
+              </h2>
+            </div>
 
-          <label className="field">
-            <span>Название</span>
-            <input
-              value={form.name}
-              maxLength={100}
-              placeholder="Например: Крепеж"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  name: event.target.value,
-                }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Название</span>
+              <input
+                value={form.name}
+                maxLength={100}
+                placeholder="Например: Крепеж"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))
+                }
+              />
+            </label>
 
-          <label className="field">
-            <span>Описание</span>
-            <textarea
-              value={form.description}
-              maxLength={500}
-              placeholder="Краткое описание категории"
-              rows={5}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  description: event.target.value,
-                }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Описание</span>
+              <textarea
+                value={form.description}
+                maxLength={500}
+                placeholder="Краткое описание категории"
+                rows={5}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    description: event.target.value,
+                  }))
+                }
+              />
+            </label>
 
-          {formError && <div className="alert alert-error">{formError}</div>}
+            {formError && <div className="alert alert-error">{formError}</div>}
 
-          <div className="form-actions">
-            <button className="button button-primary" type="submit" disabled={isSaving}>
-              {isSaving
-                ? "Сохранение..."
-                : editingCategory
-                  ? "Сохранить"
-                  : "Добавить"}
-            </button>
-            {editingCategory && (
+            <div className="form-actions">
               <button
-                className="button button-secondary"
-                type="button"
-                onClick={resetForm}
+                className="button button-primary"
+                type="submit"
+                disabled={isSaving}
               >
-                Отмена
+                {isSaving
+                  ? "Сохранение..."
+                  : editingCategory
+                    ? "Сохранить"
+                    : "Добавить"}
               </button>
-            )}
-          </div>
-        </form>
+              {editingCategory && (
+                <button
+                  className="button button-secondary"
+                  type="button"
+                  onClick={resetForm}
+                >
+                  Отмена
+                </button>
+              )}
+            </div>
+          </form>
+        )}
 
         <div className="entity-panel">
           <div className="panel-heading">
@@ -246,7 +269,7 @@ export default function CategoriesPage() {
                     <th>Название</th>
                     <th>Описание</th>
                     <th>Дата создания</th>
-                    <th>Действия</th>
+                    {(canEdit || canDelete) && <th>Действия</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -256,25 +279,33 @@ export default function CategoriesPage() {
                       <td>{category.name}</td>
                       <td>{category.description || "—"}</td>
                       <td>{formatDate(category.created_at)}</td>
-                      <td>
-                        <div className="row-actions">
-                          <button
-                            className="button button-secondary"
-                            type="button"
-                            onClick={() => handleEdit(category)}
-                          >
-                            Редактировать
-                          </button>
-                          <button
-                            className="button button-danger"
-                            type="button"
-                            disabled={deletingId === category.id}
-                            onClick={() => void handleDelete(category)}
-                          >
-                            {deletingId === category.id ? "Удаление..." : "Удалить"}
-                          </button>
-                        </div>
-                      </td>
+                      {(canEdit || canDelete) && (
+                        <td>
+                          <div className="row-actions">
+                            {canEdit && (
+                              <button
+                                className="button button-secondary"
+                                type="button"
+                                onClick={() => handleEdit(category)}
+                              >
+                                Редактировать
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                className="button button-danger"
+                                type="button"
+                                disabled={deletingId === category.id}
+                                onClick={() => void handleDelete(category)}
+                              >
+                                {deletingId === category.id
+                                  ? "Удаление..."
+                                  : "Удалить"}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

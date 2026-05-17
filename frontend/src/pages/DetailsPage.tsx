@@ -13,6 +13,7 @@ import {
 } from "../api/details";
 import { getSuppliers } from "../api/suppliers";
 import { getWarehouses } from "../api/warehouses";
+import { useRole } from "../auth/useRole";
 import type { Category } from "../types/category";
 import type { Detail, DetailCreate, DetailFilters } from "../types/detail";
 import type { Supplier } from "../types/supplier";
@@ -59,6 +60,7 @@ const emptyFilters: DetailFilterState = {
 };
 
 export default function DetailsPage() {
+  const { role, canCreate, canEdit, canDelete, canUpdateQuantity } = useRole();
   const [details, setDetails] = useState<Detail[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -237,6 +239,10 @@ export default function DetailsPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (!canCreate && !canEdit) {
+      return;
+    }
+
     const validationError = validateForm();
     if (validationError) {
       setFormError(validationError);
@@ -266,6 +272,10 @@ export default function DetailsPage() {
   };
 
   const handleEdit = (detail: Detail) => {
+    if (!canEdit) {
+      return;
+    }
+
     setEditingDetail(detail);
     setForm({
       name: detail.name,
@@ -283,6 +293,10 @@ export default function DetailsPage() {
   };
 
   const handleDelete = async (detail: Detail) => {
+    if (!canDelete) {
+      return;
+    }
+
     const confirmed = window.confirm(`Удалить деталь «${detail.name}»?`);
 
     if (!confirmed) {
@@ -325,6 +339,10 @@ export default function DetailsPage() {
   };
 
   const handleQuantityUpdate = async (detail: Detail) => {
+    if (!canUpdateQuantity) {
+      return;
+    }
+
     const quantity = Number(quantityDrafts[detail.id] ?? detail.quantity);
 
     if (!Number.isInteger(quantity) || quantity < 0) {
@@ -353,6 +371,9 @@ export default function DetailsPage() {
         <p className="lead">
           Управление деталями, артикулами, ценами и складскими остатками.
         </p>
+        <div className="role-info">
+          Текущая роль: <strong>{role}</strong>
+        </div>
       </div>
 
       <div className="entity-panel filters-panel">
@@ -479,182 +500,188 @@ export default function DetailsPage() {
         </form>
       </div>
 
-      <div className="entity-grid">
-        <form className="entity-form" onSubmit={handleSubmit}>
-          <div>
-            <h2>{editingDetail ? "Редактирование детали" : "Новая деталь"}</h2>
-          </div>
+      <div className={canCreate ? "entity-grid" : "entity-grid entity-grid-single"}>
+        {canCreate && (
+          <form className="entity-form" onSubmit={handleSubmit}>
+            <div>
+              <h2>{editingDetail ? "Редактирование детали" : "Новая деталь"}</h2>
+            </div>
 
-          <label className="field">
-            <span>Название</span>
-            <input
-              value={form.name}
-              maxLength={150}
-              placeholder="Например: Болт М8"
-              onChange={(event) =>
-                setForm((current) => ({ ...current, name: event.target.value }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Название</span>
+              <input
+                value={form.name}
+                maxLength={150}
+                placeholder="Например: Болт М8"
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, name: event.target.value }))
+                }
+              />
+            </label>
 
-          <label className="field">
-            <span>Артикул</span>
-            <input
-              value={form.article}
-              maxLength={100}
-              placeholder="Например: BOLT-M8-001"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  article: event.target.value,
-                }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Артикул</span>
+              <input
+                value={form.article}
+                maxLength={100}
+                placeholder="Например: BOLT-M8-001"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    article: event.target.value,
+                  }))
+                }
+              />
+            </label>
 
-          <label className="field">
-            <span>Материал</span>
-            <input
-              value={form.material}
-              maxLength={100}
-              placeholder="Сталь, пластик, алюминий"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  material: event.target.value,
-                }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Материал</span>
+              <input
+                value={form.material}
+                maxLength={100}
+                placeholder="Сталь, пластик, алюминий"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    material: event.target.value,
+                  }))
+                }
+              />
+            </label>
 
-          <label className="field">
-            <span>Вес</span>
-            <input
-              value={form.weight}
-              min="0"
-              step="0.001"
-              type="number"
-              placeholder="0.25"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  weight: event.target.value,
-                }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Вес</span>
+              <input
+                value={form.weight}
+                min="0"
+                step="0.001"
+                type="number"
+                placeholder="0.25"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    weight: event.target.value,
+                  }))
+                }
+              />
+            </label>
 
-          <label className="field">
-            <span>Цена</span>
-            <input
-              value={form.price}
-              min="0"
-              step="0.01"
-              type="number"
-              placeholder="120.50"
-              onChange={(event) =>
-                setForm((current) => ({ ...current, price: event.target.value }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Цена</span>
+              <input
+                value={form.price}
+                min="0"
+                step="0.01"
+                type="number"
+                placeholder="120.50"
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, price: event.target.value }))
+                }
+              />
+            </label>
 
-          <label className="field">
-            <span>Количество</span>
-            <input
-              value={form.quantity}
-              min="0"
-              step="1"
-              type="number"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  quantity: event.target.value,
-                }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Количество</span>
+              <input
+                value={form.quantity}
+                min="0"
+                step="1"
+                type="number"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    quantity: event.target.value,
+                  }))
+                }
+              />
+            </label>
 
-          <label className="field">
-            <span>Категория</span>
-            <select
-              value={form.category_id}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  category_id: event.target.value,
-                }))
-              }
-            >
-              <option value="">Выберите категорию</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="field">
-            <span>Поставщик</span>
-            <select
-              value={form.supplier_id}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  supplier_id: event.target.value,
-                }))
-              }
-            >
-              <option value="">Без поставщика</option>
-              {suppliers.map((supplier) => (
-                <option key={supplier.id} value={supplier.id}>
-                  {supplier.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="field">
-            <span>Склад</span>
-            <select
-              value={form.warehouse_id}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  warehouse_id: event.target.value,
-                }))
-              }
-            >
-              <option value="">Без склада</option>
-              {warehouses.map((warehouse) => (
-                <option key={warehouse.id} value={warehouse.id}>
-                  {warehouse.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {formError && <div className="alert alert-error">{formError}</div>}
-
-          <div className="form-actions">
-            <button className="button button-primary" type="submit" disabled={isSaving}>
-              {isSaving
-                ? "Сохранение..."
-                : editingDetail
-                  ? "Сохранить"
-                  : "Добавить"}
-            </button>
-            {editingDetail && (
-              <button
-                className="button button-secondary"
-                type="button"
-                onClick={resetForm}
+            <label className="field">
+              <span>Категория</span>
+              <select
+                value={form.category_id}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    category_id: event.target.value,
+                  }))
+                }
               >
-                Отмена
+                <option value="">Выберите категорию</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Поставщик</span>
+              <select
+                value={form.supplier_id}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    supplier_id: event.target.value,
+                  }))
+                }
+              >
+                <option value="">Без поставщика</option>
+                {suppliers.map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Склад</span>
+              <select
+                value={form.warehouse_id}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    warehouse_id: event.target.value,
+                  }))
+                }
+              >
+                <option value="">Без склада</option>
+                {warehouses.map((warehouse) => (
+                  <option key={warehouse.id} value={warehouse.id}>
+                    {warehouse.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {formError && <div className="alert alert-error">{formError}</div>}
+
+            <div className="form-actions">
+              <button
+                className="button button-primary"
+                type="submit"
+                disabled={isSaving}
+              >
+                {isSaving
+                  ? "Сохранение..."
+                  : editingDetail
+                    ? "Сохранить"
+                    : "Добавить"}
               </button>
-            )}
-          </div>
-        </form>
+              {editingDetail && (
+                <button
+                  className="button button-secondary"
+                  type="button"
+                  onClick={resetForm}
+                >
+                  Отмена
+                </button>
+              )}
+            </div>
+          </form>
+        )}
 
         <div className="entity-panel">
           <div className="panel-heading">
@@ -692,7 +719,7 @@ export default function DetailsPage() {
                     <th>Поставщик</th>
                     <th>Склад</th>
                     <th>Дата создания</th>
-                    <th>Действия</th>
+                    {(canEdit || canDelete) && <th>Действия</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -708,60 +735,70 @@ export default function DetailsPage() {
                           <span className="quantity-current">
                             {detail.quantity}
                           </span>
-                          <div className="quantity-control">
-                            <input
-                              className="quantity-input"
-                              value={
-                                quantityDrafts[detail.id] ??
-                                String(detail.quantity)
-                              }
-                              min="0"
-                              step="1"
-                              type="number"
-                              aria-label={`Количество детали ${detail.name}`}
-                              onChange={(event) =>
-                                handleQuantityDraftChange(
-                                  detail.id,
-                                  event.target.value,
-                                )
-                              }
-                            />
-                            <button
-                              className="button button-secondary"
-                              type="button"
-                              disabled={quantitySavingId === detail.id}
-                              onClick={() => void handleQuantityUpdate(detail)}
-                            >
-                              {quantitySavingId === detail.id
-                                ? "Сохранение..."
-                                : "Изменить количество"}
-                            </button>
-                          </div>
+                          {canUpdateQuantity && (
+                            <div className="quantity-control">
+                              <input
+                                className="quantity-input"
+                                value={
+                                  quantityDrafts[detail.id] ??
+                                  String(detail.quantity)
+                                }
+                                min="0"
+                                step="1"
+                                type="number"
+                                aria-label={`Количество детали ${detail.name}`}
+                                onChange={(event) =>
+                                  handleQuantityDraftChange(
+                                    detail.id,
+                                    event.target.value,
+                                  )
+                                }
+                              />
+                              <button
+                                className="button button-secondary"
+                                type="button"
+                                disabled={quantitySavingId === detail.id}
+                                onClick={() => void handleQuantityUpdate(detail)}
+                              >
+                                {quantitySavingId === detail.id
+                                  ? "Сохранение..."
+                                  : "Изменить количество"}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td>{getCategoryName(detail, categories)}</td>
                       <td>{getSupplierName(detail, suppliers)}</td>
                       <td>{getWarehouseName(detail, warehouses)}</td>
                       <td>{formatDate(detail.created_at)}</td>
-                      <td>
-                        <div className="row-actions">
-                          <button
-                            className="button button-secondary"
-                            type="button"
-                            onClick={() => handleEdit(detail)}
-                          >
-                            Редактировать
-                          </button>
-                          <button
-                            className="button button-danger"
-                            type="button"
-                            disabled={deletingId === detail.id}
-                            onClick={() => void handleDelete(detail)}
-                          >
-                            {deletingId === detail.id ? "Удаление..." : "Удалить"}
-                          </button>
-                        </div>
-                      </td>
+                      {(canEdit || canDelete) && (
+                        <td>
+                          <div className="row-actions">
+                            {canEdit && (
+                              <button
+                                className="button button-secondary"
+                                type="button"
+                                onClick={() => handleEdit(detail)}
+                              >
+                                Редактировать
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                className="button button-danger"
+                                type="button"
+                                disabled={deletingId === detail.id}
+                                onClick={() => void handleDelete(detail)}
+                              >
+                                {deletingId === detail.id
+                                  ? "Удаление..."
+                                  : "Удалить"}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

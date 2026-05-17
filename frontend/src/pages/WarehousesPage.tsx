@@ -8,6 +8,7 @@ import {
   getWarehouses,
   updateWarehouse,
 } from "../api/warehouses";
+import { useRole } from "../auth/useRole";
 import type { Warehouse, WarehouseCreate } from "../types/warehouse";
 
 interface WarehouseFormState {
@@ -23,6 +24,7 @@ const emptyForm: WarehouseFormState = {
 };
 
 export default function WarehousesPage() {
+  const { role, canCreate, canEdit, canDelete } = useRole();
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [form, setForm] = useState<WarehouseFormState>(emptyForm);
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
@@ -103,6 +105,10 @@ export default function WarehousesPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (!canCreate && !canEdit) {
+      return;
+    }
+
     const validationError = validateForm();
     if (validationError) {
       setFormError(validationError);
@@ -131,6 +137,10 @@ export default function WarehousesPage() {
   };
 
   const handleEdit = (warehouse: Warehouse) => {
+    if (!canEdit) {
+      return;
+    }
+
     setEditingWarehouse(warehouse);
     setForm({
       name: warehouse.name,
@@ -141,6 +151,10 @@ export default function WarehousesPage() {
   };
 
   const handleDelete = async (warehouse: Warehouse) => {
+    if (!canDelete) {
+      return;
+    }
+
     const confirmed = window.confirm(`Удалить склад «${warehouse.name}»?`);
 
     if (!confirmed) {
@@ -171,83 +185,92 @@ export default function WarehousesPage() {
         <p className="lead">
           Управление складами, адресами хранения и ответственными лицами.
         </p>
+        <div className="role-info">
+          Текущая роль: <strong>{role}</strong>
+        </div>
       </div>
 
-      <div className="entity-grid">
-        <form className="entity-form" onSubmit={handleSubmit}>
-          <div>
-            <h2>
-              {editingWarehouse ? "Редактирование склада" : "Новый склад"}
-            </h2>
-          </div>
+      <div className={canCreate ? "entity-grid" : "entity-grid entity-grid-single"}>
+        {canCreate && (
+          <form className="entity-form" onSubmit={handleSubmit}>
+            <div>
+              <h2>
+                {editingWarehouse ? "Редактирование склада" : "Новый склад"}
+              </h2>
+            </div>
 
-          <label className="field">
-            <span>Название</span>
-            <input
-              value={form.name}
-              maxLength={150}
-              placeholder="Например: Основной склад"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  name: event.target.value,
-                }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Название</span>
+              <input
+                value={form.name}
+                maxLength={150}
+                placeholder="Например: Основной склад"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))
+                }
+              />
+            </label>
 
-          <label className="field">
-            <span>Адрес</span>
-            <textarea
-              value={form.address}
-              maxLength={300}
-              placeholder="Адрес склада"
-              rows={4}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  address: event.target.value,
-                }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Адрес</span>
+              <textarea
+                value={form.address}
+                maxLength={300}
+                placeholder="Адрес склада"
+                rows={4}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    address: event.target.value,
+                  }))
+                }
+              />
+            </label>
 
-          <label className="field">
-            <span>Ответственное лицо</span>
-            <input
-              value={form.responsible_person}
-              maxLength={150}
-              placeholder="Иванов Иван Иванович"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  responsible_person: event.target.value,
-                }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Ответственное лицо</span>
+              <input
+                value={form.responsible_person}
+                maxLength={150}
+                placeholder="Иванов Иван Иванович"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    responsible_person: event.target.value,
+                  }))
+                }
+              />
+            </label>
 
-          {formError && <div className="alert alert-error">{formError}</div>}
+            {formError && <div className="alert alert-error">{formError}</div>}
 
-          <div className="form-actions">
-            <button className="button button-primary" type="submit" disabled={isSaving}>
-              {isSaving
-                ? "Сохранение..."
-                : editingWarehouse
-                  ? "Сохранить"
-                  : "Добавить"}
-            </button>
-            {editingWarehouse && (
+            <div className="form-actions">
               <button
-                className="button button-secondary"
-                type="button"
-                onClick={resetForm}
+                className="button button-primary"
+                type="submit"
+                disabled={isSaving}
               >
-                Отмена
+                {isSaving
+                  ? "Сохранение..."
+                  : editingWarehouse
+                    ? "Сохранить"
+                    : "Добавить"}
               </button>
-            )}
-          </div>
-        </form>
+              {editingWarehouse && (
+                <button
+                  className="button button-secondary"
+                  type="button"
+                  onClick={resetForm}
+                >
+                  Отмена
+                </button>
+              )}
+            </div>
+          </form>
+        )}
 
         <div className="entity-panel">
           <div className="panel-heading">
@@ -280,7 +303,7 @@ export default function WarehousesPage() {
                     <th>Адрес</th>
                     <th>Ответственное лицо</th>
                     <th>Дата создания</th>
-                    <th>Действия</th>
+                    {(canEdit || canDelete) && <th>Действия</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -291,25 +314,33 @@ export default function WarehousesPage() {
                       <td>{warehouse.address}</td>
                       <td>{warehouse.responsible_person || "—"}</td>
                       <td>{formatDate(warehouse.created_at)}</td>
-                      <td>
-                        <div className="row-actions">
-                          <button
-                            className="button button-secondary"
-                            type="button"
-                            onClick={() => handleEdit(warehouse)}
-                          >
-                            Редактировать
-                          </button>
-                          <button
-                            className="button button-danger"
-                            type="button"
-                            disabled={deletingId === warehouse.id}
-                            onClick={() => void handleDelete(warehouse)}
-                          >
-                            {deletingId === warehouse.id ? "Удаление..." : "Удалить"}
-                          </button>
-                        </div>
-                      </td>
+                      {(canEdit || canDelete) && (
+                        <td>
+                          <div className="row-actions">
+                            {canEdit && (
+                              <button
+                                className="button button-secondary"
+                                type="button"
+                                onClick={() => handleEdit(warehouse)}
+                              >
+                                Редактировать
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                className="button button-danger"
+                                type="button"
+                                disabled={deletingId === warehouse.id}
+                                onClick={() => void handleDelete(warehouse)}
+                              >
+                                {deletingId === warehouse.id
+                                  ? "Удаление..."
+                                  : "Удалить"}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

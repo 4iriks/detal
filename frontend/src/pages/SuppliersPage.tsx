@@ -8,6 +8,7 @@ import {
   getSuppliers,
   updateSupplier,
 } from "../api/suppliers";
+import { useRole } from "../auth/useRole";
 import type { Supplier, SupplierCreate } from "../types/supplier";
 
 interface SupplierFormState {
@@ -27,6 +28,7 @@ const emptyForm: SupplierFormState = {
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SuppliersPage() {
+  const { role, canCreate, canEdit, canDelete } = useRole();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [form, setForm] = useState<SupplierFormState>(emptyForm);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
@@ -109,6 +111,10 @@ export default function SuppliersPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (!canCreate && !canEdit) {
+      return;
+    }
+
     const validationError = validateForm();
     if (validationError) {
       setFormError(validationError);
@@ -137,6 +143,10 @@ export default function SuppliersPage() {
   };
 
   const handleEdit = (supplier: Supplier) => {
+    if (!canEdit) {
+      return;
+    }
+
     setEditingSupplier(supplier);
     setForm({
       name: supplier.name,
@@ -148,6 +158,10 @@ export default function SuppliersPage() {
   };
 
   const handleDelete = async (supplier: Supplier) => {
+    if (!canDelete) {
+      return;
+    }
+
     const confirmed = window.confirm(
       `Удалить поставщика «${supplier.name}»?`,
     );
@@ -180,99 +194,108 @@ export default function SuppliersPage() {
         <p className="lead">
           Управление поставщиками деталей и контактными данными контрагентов.
         </p>
+        <div className="role-info">
+          Текущая роль: <strong>{role}</strong>
+        </div>
       </div>
 
-      <div className="entity-grid">
-        <form className="entity-form" onSubmit={handleSubmit}>
-          <div>
-            <h2>
-              {editingSupplier ? "Редактирование поставщика" : "Новый поставщик"}
-            </h2>
-          </div>
+      <div className={canCreate ? "entity-grid" : "entity-grid entity-grid-single"}>
+        {canCreate && (
+          <form className="entity-form" onSubmit={handleSubmit}>
+            <div>
+              <h2>
+                {editingSupplier ? "Редактирование поставщика" : "Новый поставщик"}
+              </h2>
+            </div>
 
-          <label className="field">
-            <span>Название</span>
-            <input
-              value={form.name}
-              maxLength={150}
-              placeholder="Например: ООО ТехКомплект"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  name: event.target.value,
-                }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Название</span>
+              <input
+                value={form.name}
+                maxLength={150}
+                placeholder="Например: ООО ТехКомплект"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))
+                }
+              />
+            </label>
 
-          <label className="field">
-            <span>Email</span>
-            <input
-              value={form.email}
-              maxLength={255}
-              placeholder="info@example.ru"
-              type="email"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  email: event.target.value,
-                }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Email</span>
+              <input
+                value={form.email}
+                maxLength={255}
+                placeholder="info@example.ru"
+                type="email"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    email: event.target.value,
+                  }))
+                }
+              />
+            </label>
 
-          <label className="field">
-            <span>Телефон</span>
-            <input
-              value={form.phone}
-              maxLength={30}
-              placeholder="+7 495 100-20-30"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  phone: event.target.value,
-                }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Телефон</span>
+              <input
+                value={form.phone}
+                maxLength={30}
+                placeholder="+7 495 100-20-30"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    phone: event.target.value,
+                  }))
+                }
+              />
+            </label>
 
-          <label className="field">
-            <span>Адрес</span>
-            <textarea
-              value={form.address}
-              maxLength={300}
-              placeholder="Юридический или складской адрес"
-              rows={4}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  address: event.target.value,
-                }))
-              }
-            />
-          </label>
+            <label className="field">
+              <span>Адрес</span>
+              <textarea
+                value={form.address}
+                maxLength={300}
+                placeholder="Юридический или складской адрес"
+                rows={4}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    address: event.target.value,
+                  }))
+                }
+              />
+            </label>
 
-          {formError && <div className="alert alert-error">{formError}</div>}
+            {formError && <div className="alert alert-error">{formError}</div>}
 
-          <div className="form-actions">
-            <button className="button button-primary" type="submit" disabled={isSaving}>
-              {isSaving
-                ? "Сохранение..."
-                : editingSupplier
-                  ? "Сохранить"
-                  : "Добавить"}
-            </button>
-            {editingSupplier && (
+            <div className="form-actions">
               <button
-                className="button button-secondary"
-                type="button"
-                onClick={resetForm}
+                className="button button-primary"
+                type="submit"
+                disabled={isSaving}
               >
-                Отмена
+                {isSaving
+                  ? "Сохранение..."
+                  : editingSupplier
+                    ? "Сохранить"
+                    : "Добавить"}
               </button>
-            )}
-          </div>
-        </form>
+              {editingSupplier && (
+                <button
+                  className="button button-secondary"
+                  type="button"
+                  onClick={resetForm}
+                >
+                  Отмена
+                </button>
+              )}
+            </div>
+          </form>
+        )}
 
         <div className="entity-panel">
           <div className="panel-heading">
@@ -306,7 +329,7 @@ export default function SuppliersPage() {
                     <th>Телефон</th>
                     <th>Адрес</th>
                     <th>Дата создания</th>
-                    <th>Действия</th>
+                    {(canEdit || canDelete) && <th>Действия</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -318,25 +341,33 @@ export default function SuppliersPage() {
                       <td>{supplier.phone || "—"}</td>
                       <td>{supplier.address || "—"}</td>
                       <td>{formatDate(supplier.created_at)}</td>
-                      <td>
-                        <div className="row-actions">
-                          <button
-                            className="button button-secondary"
-                            type="button"
-                            onClick={() => handleEdit(supplier)}
-                          >
-                            Редактировать
-                          </button>
-                          <button
-                            className="button button-danger"
-                            type="button"
-                            disabled={deletingId === supplier.id}
-                            onClick={() => void handleDelete(supplier)}
-                          >
-                            {deletingId === supplier.id ? "Удаление..." : "Удалить"}
-                          </button>
-                        </div>
-                      </td>
+                      {(canEdit || canDelete) && (
+                        <td>
+                          <div className="row-actions">
+                            {canEdit && (
+                              <button
+                                className="button button-secondary"
+                                type="button"
+                                onClick={() => handleEdit(supplier)}
+                              >
+                                Редактировать
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                className="button button-danger"
+                                type="button"
+                                disabled={deletingId === supplier.id}
+                                onClick={() => void handleDelete(supplier)}
+                              >
+                                {deletingId === supplier.id
+                                  ? "Удаление..."
+                                  : "Удалить"}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

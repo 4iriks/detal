@@ -166,6 +166,21 @@ h1 {
   line-height: 1.6;
 }
 
+.role-info {
+  width: fit-content;
+  border: 1px solid #dde4ed;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #435466;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.role-info strong {
+  color: #16212d;
+}
+
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -208,6 +223,10 @@ h1 {
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
   gap: 24px;
   align-items: start;
+}
+
+.entity-grid-single {
+  grid-template-columns: 1fr;
 }
 
 .entity-form,
