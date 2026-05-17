@@ -27,7 +27,7 @@ class Detail(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(160), nullable=False)
-    article: Mapped[str] = mapped_column(String(80), nullable=False)
+    article: Mapped[str] = mapped_column(String(100), nullable=False)
     material: Mapped[str | None] = mapped_column(String(120), nullable=True)
     weight: Mapped[Decimal | None] = mapped_column(Numeric(10, 3), nullable=True)
     price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
