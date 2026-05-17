@@ -212,6 +212,7 @@ h1 {
 }
 
 .field input,
+.field select,
 .field textarea {
   width: 100%;
   border: 1px solid #c8d3df;
@@ -222,7 +223,8 @@ h1 {
   font-weight: 500;
 }
 
-.field input {
+.field input,
+.field select {
   min-height: 42px;
   padding: 0 12px;
 }
@@ -234,6 +236,7 @@ h1 {
 }
 
 .field input:focus,
+.field select:focus,
 .field textarea:focus {
   outline: 3px solid #bde2dc;
   border-color: #0d5f54;
@@ -330,6 +333,10 @@ h1 {
 
 .data-table-wide {
   min-width: 980px;
+}
+
+.data-table-extra-wide {
+  min-width: 1280px;
 }
 
 .data-table th,

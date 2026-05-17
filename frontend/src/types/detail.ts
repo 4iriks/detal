@@ -17,6 +17,9 @@ export interface Detail {
   warehouse_id: number | null;
   created_at: string;
   updated_at: string;
+  category?: Category;
+  supplier?: Supplier | null;
+  warehouse?: Warehouse | null;
 }
 
 export interface DetailFull extends Detail {
