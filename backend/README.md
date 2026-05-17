@@ -124,3 +124,40 @@ GET http://127.0.0.1:8000/health
   "status": "ok"
 }
 ```
+
+Swagger UI доступен после запуска сервера:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+## API категорий
+
+Для сущности `Category` реализован CRUD:
+
+```text
+GET    /categories?skip=0&limit=100
+GET    /categories/{category_id}
+POST   /categories
+PUT    /categories/{category_id}
+PATCH  /categories/{category_id}
+DELETE /categories/{category_id}
+```
+
+Пример JSON для `POST /categories`:
+
+```json
+{
+  "name": "Крепеж",
+  "description": "Болты, гайки, шайбы и другие крепежные элементы"
+}
+```
+
+Пример JSON для `PUT /categories/{category_id}`:
+
+```json
+{
+  "name": "Механические детали",
+  "description": "Валы, шестерни, корпуса и другие механические элементы"
+}
+```
