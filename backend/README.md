@@ -111,6 +111,12 @@ docker compose up --build
 docker compose exec backend alembic upgrade head
 ```
 
+Заполнить базу демонстрационными данными:
+
+```powershell
+docker compose exec backend python -m app.seed
+```
+
 Проверочные адреса:
 
 ```text
@@ -128,6 +134,37 @@ docker compose down
 
 ```powershell
 docker compose down -v
+```
+
+## Заполнение базы демонстрационными данными
+
+Seed-скрипт `app.seed` создает реалистичные данные для проверки API:
+
+- 4 категории: крепеж, электронные компоненты, механические детали, корпусные элементы.
+- 3 поставщика: ООО «ТехноПоставка», ЗАО «ПромКомплект», ООО «Механика-Сервис».
+- 3 склада: основной склад, склад комплектующих, резервный склад.
+- 10 деталей: болты, гайки, шайбы, подшипник, электронные компоненты и механические элементы.
+
+Скрипт можно запускать повторно: он не создает дубликаты, потому что проверяет записи по уникальным полям `category.name`, `supplier.email`, `warehouse.name` и `detail.article`.
+
+Команда запуска:
+
+```powershell
+docker compose exec backend python -m app.seed
+```
+
+Стандартный порядок запуска для демонстрации:
+
+```powershell
+docker compose up --build
+docker compose exec backend alembic upgrade head
+docker compose exec backend python -m app.seed
+```
+
+После этого API можно проверять в Swagger UI:
+
+```text
+http://localhost:8000/docs
 ```
 
 ## Подготовка окружения

@@ -18,6 +18,12 @@ docker compose up --build
 docker compose exec backend alembic upgrade head
 ```
 
+Заполнить базу демонстрационными данными:
+
+```powershell
+docker compose exec backend python -m app.seed
+```
+
 Проверочные адреса:
 
 ```text
@@ -41,3 +47,28 @@ docker compose down -v
 
 - `docker-compose.yml` - запуск PostgreSQL и backend.
 - `backend/` - FastAPI, SQLAlchemy, Alembic, CRUD API и SQL-объекты PostgreSQL.
+
+## Заполнение базы демонстрационными данными
+
+Seed-скрипт создает реалистичные данные для проверки API:
+
+- 4 категории деталей;
+- 3 поставщика;
+- 3 склада;
+- 10 деталей.
+
+Скрипт идемпотентный: повторный запуск не создает дубликаты, потому что записи проверяются по уникальным полям.
+
+Стандартный порядок запуска для демонстрации:
+
+```powershell
+docker compose up --build
+docker compose exec backend alembic upgrade head
+docker compose exec backend python -m app.seed
+```
+
+После этого API можно проверять в Swagger UI:
+
+```text
+http://localhost:8000/docs
+```
