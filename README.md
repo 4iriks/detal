@@ -72,3 +72,22 @@ docker compose exec backend python -m app.seed
 ```text
 http://localhost:8000/docs
 ```
+
+## Тестирование
+
+Тесты находятся в `backend/tests` и проверяют health endpoint, CRUD для категорий, поставщиков, складов и деталей.
+
+Перед запуском тестов поднимите контейнеры и примените миграции:
+
+```powershell
+docker compose up --build
+docker compose exec backend alembic upgrade head
+```
+
+Запустить тесты:
+
+```powershell
+docker compose exec backend pytest
+```
+
+Тесты используют уникальные имена и артикулы, поэтому повторный запуск не должен конфликтовать с уже созданными данными.

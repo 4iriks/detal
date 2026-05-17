@@ -167,6 +167,31 @@ docker compose exec backend python -m app.seed
 http://localhost:8000/docs
 ```
 
+## Тестирование
+
+Автоматизированные тесты находятся в папке `tests` и проверяют:
+
+- `GET /health`;
+- CRUD для `categories`;
+- создание, валидацию email и конфликт email для `suppliers`;
+- создание и получение `warehouses`;
+- создание, фильтрацию, low-stock, изменение количества и удаление `details`.
+
+Перед запуском тестов поднимите контейнеры и примените миграции:
+
+```powershell
+docker compose up --build
+docker compose exec backend alembic upgrade head
+```
+
+Запустить тесты:
+
+```powershell
+docker compose exec backend pytest
+```
+
+Тесты используют уникальные имена, email и артикулы, поэтому повторный запуск не должен конфликтовать с уже созданными данными.
+
 ## Подготовка окружения
 
 Команды выполняются из папки `backend`.
